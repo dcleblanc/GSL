@@ -17,19 +17,10 @@
 #ifndef GSL_UTIL_H
 #define GSL_UTIL_H
 
+#include <gsl/gsl_common> // Central compiler and external dependencies
 #include <gsl/gsl_assert> // for Expects
 
-#include <array>
-#include <cstddef>          // for ptrdiff_t, size_t
-#include <exception>        // for exception
-#include <initializer_list> // for initializer_list
-#include <type_traits>      // for is_signed, integral_constant
-#include <utility>          // for forward
-
 #if defined(_MSC_VER)
-
-#pragma warning(push)
-#pragma warning(disable : 4127) // conditional expression is constant
 
 #if _MSC_VER < 1910
 #pragma push_macro("constexpr")
@@ -99,21 +90,42 @@ struct narrowing_error : public std::exception
 
 namespace details
 {
-    template <class T, class U>
-    struct is_same_signedness
-        : public std::integral_constant<bool, std::is_signed<T>::value == std::is_signed<U>::value>
+    template <typename T, typename U, bool> class NarrowCornerCase;
+
+    template <typename T, typename U> 
+    class NarrowCornerCase <T, U, false>
     {
+    public:
+        static bool Test(T t, U u)
+        {
+            // T is not the same sign as U
+            return ((t < T(0)) != (u < U(0)));
+        }
     };
+
+    template <typename T, typename U>
+    class NarrowCornerCase <T, U, true>
+    {
+    public:
+        static bool Test(T, U)
+        {
+            // T is the same sign, so there is never a problem
+            return false;
+        }
+    };
+
 }
 
 // narrow() : a checked version of narrow_cast() that throws if the cast changed the value
-template <class T, class U>
+template <typename T, typename U>
 T narrow(U u)
 {
     T t = narrow_cast<T>(u);
     if (static_cast<U>(t) != u) gsl::details::throw_exception(narrowing_error());
-    if (!details::is_same_signedness<T, U>::value && ((t < T{}) != (u < U{})))
+
+    if(details::NarrowCornerCase<T, U, (std::is_signed<T>::value == std::is_signed<U>::value) >::Test(t, u))
         gsl::details::throw_exception(narrowing_error());
+
     return t;
 }
 
@@ -150,8 +162,6 @@ constexpr T at(const std::initializer_list<T> cont, const index i)
 #pragma pop_macro("constexpr")
 
 #endif // _MSC_VER < 1910
-
-#pragma warning(pop)
 
 #endif // _MSC_VER
 

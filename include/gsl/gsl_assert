@@ -17,8 +17,7 @@
 #ifndef GSL_CONTRACTS_H
 #define GSL_CONTRACTS_H
 
-#include <exception>
-#include <stdexcept> // for logic_error
+#include <gsl/gsl_common> // Central compiler and external dependencies
 
 //
 // Temporary until MSVC STL supports no-exceptions mode.

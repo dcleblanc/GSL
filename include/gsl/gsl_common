@@ -1,0 +1,149 @@
+#ifndef GSL_COMMON
+#define GSL_COMMON
+#pragma once
+
+// Determine which compiler we're dealing with
+// Clang, gcc, and Intel can all pretend to be the Microsoft compiler
+// Clang can also pretend to be gcc
+
+#define UNKNOWN_COMPILER 0
+#define MSVC_COMPILER 1
+#define INTEL_COMPILER 2
+#define GCC_COMPILER 3
+#define CLANG_COMPILER 4
+
+// First check clang
+#if defined __clang__
+#define GSL_COMPILER CLANG_COMPILER
+#elif defined __GNUC__
+#define GSL_COMPILER GCC_COMPILER
+#elif defined __INTEL_COMPILER
+#define GSL_COMPILER INTEL_COMPILER
+#elif defined _MSC_VER 
+#define GSL_COMPILER MSVC_COMPILER
+#else
+#define GSL_COMPILER UNKNOWN_COMPILER
+#endif
+
+static_assert(GSL_COMPILER > UNKNOWN_COMPILER, "Unknown compiler");
+
+#define GSL_CPP_MSVC_2015 1
+#define GSL_CPP_14        2
+#define GSL_CPP_17        3 // Future use
+
+// Now that we know which compiler we have, check for minimum version, and C++ standard level
+#if GSL_COMPILER == CLANG_COMPILER
+    // Clang 3.4 should support everything, but currently only have check-in tests for 3.6
+    #if (__clang_major__ > 3L || (__clang_major__ == 3L && __clang_major__ >= 4L))
+    #define GSL_SUPPORTED_COMPILER 1
+    #endif
+
+#elif GSL_COMPILER == GCC_COMPILER
+    // Version 5 and higher has full C++14 support
+    #if __GNUC__ >= 5L
+    #define GSL_SUPPORTED_COMPILER 1
+    #endif
+
+#elif GSL_COMPILER == INTEL_COMPILER
+    #if __INTEL_COMPILER >= 1700L
+    #define GSL_SUPPORTED_COMPILER 1
+    #endif
+
+#elif GSL_COMPILER == MSVC_COMPILER
+    #if _MSC_VER >= 1900L
+    #define GSL_SUPPORTED_COMPILER 1
+    #endif
+#endif
+
+#if !defined GSL_SUPPORTED_COMPILER || GSL_SUPPORTED_COMPILER == 0
+static_assert(0, "Incorrect compiler version");
+#endif
+
+// Now determine whether the standard level is at least high as we need
+// Both gcc and clang have support that depends on the -std= argument
+#if GSL_COMPILER == GCC_COMPILER || GSL_COMPILER == CLANG_COMPILER
+    #if __cplusplus >= 201402L
+    #define GSL_CPP_VER GSL_CPP_14
+    #endif
+#elif GSL_COMPILER == INTEL_COMPILER
+    // If we have a supported version of the compiler, then
+    // we have C++14 support, and it isn't indicated by the __cplusplus value
+    #define GSL_CPP_VER GSL_CPP_14
+#elif GSL_COMPILER == MSVC_COMPILER
+    #if _MSC_VER < 1910L
+    #define GSL_CPP_VER GSL_CPP_MSVC_2015
+    #else
+    #define GSL_CPP_VER GSL_CPP_14
+    #endif
+#endif
+
+#if !defined GSL_CPP_VER || GSL_CPP_VER == 0
+    // Make sure you have -std=C++14 (or later) if using gcc or clang
+    static_assert(0, "Unsupported C++ standard level");
+#endif
+
+// Now define the work-arounds for various features needed to maintain support for VS2015
+#if GSL_CPP_VER == GSL_CPP_MSVC_2015
+#define GSL_CONSTEXPR
+#else
+#define GSL_CONSTEXPR constexpr
+#endif
+
+#ifdef _MSC_VER
+// Warnings that apply to the whole file
+
+// unreferenced inline function has been removed, warning isn't useful
+#pragma warning(disable: 4514)
+
+#pragma warning(push)
+// Warnings that apply to external headers
+
+// conversion from 'int' to 'std::_Rand_urng_from_func::result_type', signed / unsigned mismatch, <algorithm>
+#pragma warning(disable: 4365)
+
+// 'sprintf_s' : format string expected in argument 3 is not a string literal <xlocnum>
+#pragma warning(disable: 4774)
+
+// function not inlined, stdio.h
+#pragma warning(disable: 4710)
+
+// signed/unsigned mismatch in xlocale
+#pragma warning(disable: 4365)
+
+// 'std::_Yarn<char>': '3' bytes padding added after data member 'std::_Yarn<char>::_Nul' <xutility>
+#pragma warning(disable: 4820)
+
+// copy constructor, move constructor or assignment operator defined as deleted
+#pragma warning(disable: 4625 4626 5026 5027)
+
+// structured exceptions (SEH) are no longer caught, xlocale
+#pragma warning(disable: 4571)
+#endif // _MSC_VER
+
+// External headers
+#include <algorithm> // for equal, lexicographical_compare, forward, transform, copy_n
+#include <array>     // for array
+#include <cstddef>   // for ptrdiff_t, size_t, nullptr_t
+#include <cstdint>   // for PTRDIFF_MAX
+#include <cstring>
+#include <string>      // for basic_string, allocator, char_traits
+#include <type_traits> // for declval, is_convertible, enable_if_t, add_...
+#include <iterator>    // for reverse_iterator, distance, random_access_...
+#include <limits>      // for numeric_limits
+#include <exception>   // for exception
+#include <stdexcept>   // for logic_error
+#include <utility>     // for forward
+#include <iosfwd>       // for ptrdiff_t, nullptr_t, ostream, size_t
+#include <memory>       // for shared_ptr, unique_ptr
+#include <system_error> // for hash
+#include <cassert>
+#include <functional>       // for divides, multiplies, minus, negate, plus
+#include <initializer_list> // for initializer_list
+#include <new>
+#include <numeric>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+#endif // GSL_COMMON

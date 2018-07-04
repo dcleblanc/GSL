@@ -122,8 +122,6 @@ add_library(gsl_tests_config_noexcept INTERFACE)
 target_compile_options(gsl_tests_config_noexcept INTERFACE
     $<$<CXX_COMPILER_ID:MSVC>:
         /D_HAS_EXCEPTIONS=0
-        /wd4702
-        /wd4577
         /W4
         /WX
     >

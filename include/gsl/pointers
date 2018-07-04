@@ -17,13 +17,8 @@
 #ifndef GSL_POINTERS_H
 #define GSL_POINTERS_H
 
+#include <gsl/gsl_common> // Central compiler and external dependencies
 #include <gsl/gsl_assert>  // for Ensures, Expects
-
-#include <algorithm>    // for forward
-#include <iosfwd>       // for ptrdiff_t, nullptr_t, ostream, size_t
-#include <memory>       // for shared_ptr, unique_ptr
-#include <system_error> // for hash
-#include <type_traits>  // for enable_if_t, is_convertible, is_assignable
 
 #if defined(_MSC_VER) && _MSC_VER < 1910
 #pragma push_macro("constexpr")

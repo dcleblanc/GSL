@@ -17,25 +17,13 @@
 #ifndef GSL_SPAN_H
 #define GSL_SPAN_H
 
+#include <gsl/gsl_common> // Central compiler and external dependencies
 #include <gsl/gsl_assert> // for Expects
 #include <gsl/gsl_byte>   // for byte
 #include <gsl/gsl_util>   // for narrow_cast, narrow
 
-#include <algorithm> // for lexicographical_compare
-#include <array>     // for array
-#include <cstddef>   // for ptrdiff_t, size_t, nullptr_t
-#include <iterator>  // for reverse_iterator, distance, random_access_...
-#include <limits>
-#include <stdexcept>
-#include <type_traits> // for enable_if_t, declval, is_convertible, inte...
-#include <utility>
-
 #ifdef _MSC_VER
 #pragma warning(push)
-
-// turn off some warnings that are noisy about our Expects statements
-#pragma warning(disable : 4127) // conditional expression is constant
-#pragma warning(disable : 4702) // unreachable code
 
 // blanket turn off warnings from CppCoreCheck for now
 // so people aren't annoyed by them when running the tool.
@@ -63,7 +51,7 @@
 // compiletime, so the compiler wouldn't have to warn indiscriminently, but 
 // could check if the source value actually doesn't fit into the target type 
 // and only warn in those cases.
-#if __GNUC__ > 6
+#if defined __GNUC__ && __GNUC__ > 6
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
@@ -759,7 +747,7 @@ constexpr ElementType& at(span<ElementType, Extent> s, index i)
 #pragma warning(pop)
 #endif // _MSC_VER
 
-#if __GNUC__ > 6 
+#if defined __GNUC__ && __GNUC__ > 6 
 #pragma GCC diagnostic pop
 #endif // __GNUC__ > 6
 
