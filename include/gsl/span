@@ -30,12 +30,6 @@
 // more targeted suppressions will be added in a future update to the GSL
 #pragma warning(disable : 26481 26482 26483 26485 26490 26491 26492 26493 26495)
 
-#if _MSC_VER < 1910
-#pragma push_macro("constexpr")
-#define constexpr /*constexpr*/
-#define GSL_USE_STATIC_CONSTEXPR_WORKAROUND
-
-#endif                          // _MSC_VER < 1910
 #else                           // _MSC_VER
 
 // See if we have enough C++17 power to use a static constexpr data member
@@ -60,7 +54,7 @@ namespace gsl
 {
 
 // [views.constants], constants
-constexpr const std::ptrdiff_t dynamic_extent = -1;
+GSL_CONSTEXPR const std::ptrdiff_t dynamic_extent = -1;
 
 template <class ElementType, std::ptrdiff_t Extent = dynamic_extent>
 class span;
@@ -132,125 +126,125 @@ namespace details
 
         span_iterator() = default;
 
-        constexpr span_iterator(const Span* span, typename Span::index_type idx) noexcept
+        GSL_CONSTEXPR span_iterator(const Span* span, typename Span::index_type idx) noexcept
             : span_(span), index_(idx)
         {}
 
         friend span_iterator<Span, true>;
         template<bool B, std::enable_if_t<!B && IsConst>* = nullptr>
-        constexpr span_iterator(const span_iterator<Span, B>& other) noexcept
+        GSL_CONSTEXPR span_iterator(const span_iterator<Span, B>& other) noexcept
             : span_iterator(other.span_, other.index_)
         {
         }
 
-        constexpr reference operator*() const
+        GSL_CONSTEXPR reference operator*() const
         {
             Expects(index_ != span_->size());
             return *(span_->data() + index_);
         }
 
-        constexpr pointer operator->() const
+        GSL_CONSTEXPR pointer operator->() const
         {
             Expects(index_ != span_->size());
             return span_->data() + index_;
         }
 
-        constexpr span_iterator& operator++()
+        GSL_CONSTEXPR span_iterator& operator++()
         {
             Expects(0 <= index_ && index_ != span_->size());
             ++index_;
             return *this;
         }
 
-        constexpr span_iterator operator++(int)
+        GSL_CONSTEXPR span_iterator operator++(int)
         {
             auto ret = *this;
             ++(*this);
             return ret;
         }
 
-        constexpr span_iterator& operator--()
+        GSL_CONSTEXPR span_iterator& operator--()
         {
             Expects(index_ != 0 && index_ <= span_->size());
             --index_;
             return *this;
         }
 
-        constexpr span_iterator operator--(int)
+        GSL_CONSTEXPR span_iterator operator--(int)
         {
             auto ret = *this;
             --(*this);
             return ret;
         }
 
-        constexpr span_iterator operator+(difference_type n) const
+        GSL_CONSTEXPR span_iterator operator+(difference_type n) const
         {
             auto ret = *this;
             return ret += n;
         }
 
-        friend constexpr span_iterator operator+(difference_type n, span_iterator const& rhs)
+        friend GSL_CONSTEXPR span_iterator operator+(difference_type n, span_iterator const& rhs)
         {
             return rhs + n;
         }
 
-        constexpr span_iterator& operator+=(difference_type n)
+        GSL_CONSTEXPR span_iterator& operator+=(difference_type n)
         {
             Expects((index_ + n) >= 0 && (index_ + n) <= span_->size());
             index_ += n;
             return *this;
         }
 
-        constexpr span_iterator operator-(difference_type n) const
+        GSL_CONSTEXPR span_iterator operator-(difference_type n) const
         {
             auto ret = *this;
             return ret -= n;
         }
 
-        constexpr span_iterator& operator-=(difference_type n) { return *this += -n; }
+        GSL_CONSTEXPR span_iterator& operator-=(difference_type n) { return *this += -n; }
 
-        constexpr difference_type operator-(span_iterator rhs) const
+        GSL_CONSTEXPR difference_type operator-(span_iterator rhs) const
         {
             Expects(span_ == rhs.span_);
             return index_ - rhs.index_;
         }
 
-        constexpr reference operator[](difference_type n) const
+        GSL_CONSTEXPR reference operator[](difference_type n) const
         {
             return *(*this + n);
         }
 
-        constexpr friend bool operator==(span_iterator lhs,
+        GSL_CONSTEXPR friend bool operator==(span_iterator lhs,
                                          span_iterator rhs) noexcept
         {
             return lhs.span_ == rhs.span_ && lhs.index_ == rhs.index_;
         }
 
-        constexpr friend bool operator!=(span_iterator lhs,
+        GSL_CONSTEXPR friend bool operator!=(span_iterator lhs,
                                          span_iterator rhs) noexcept
         {
             return !(lhs == rhs);
         }
 
-        constexpr friend bool operator<(span_iterator lhs,
+        GSL_CONSTEXPR friend bool operator<(span_iterator lhs,
                                         span_iterator rhs) noexcept
         {
             return lhs.index_ < rhs.index_;
         }
 
-        constexpr friend bool operator<=(span_iterator lhs,
+        GSL_CONSTEXPR friend bool operator<=(span_iterator lhs,
                                          span_iterator rhs) noexcept
         {
             return !(rhs < lhs);
         }
 
-        constexpr friend bool operator>(span_iterator lhs,
+        GSL_CONSTEXPR friend bool operator>(span_iterator lhs,
                                         span_iterator rhs) noexcept
         {
             return rhs < lhs;
         }
 
-        constexpr friend bool operator>=(span_iterator lhs,
+        GSL_CONSTEXPR friend bool operator>=(span_iterator lhs,
                                          span_iterator rhs) noexcept
         {
             return !(rhs > lhs);
@@ -260,20 +254,20 @@ namespace details
         // MSVC++ iterator debugging support; allows STL algorithms in 15.8+
         // to unwrap span_iterator to a pointer type after a range check in STL
         // algorithm calls
-        friend constexpr void _Verify_range(span_iterator lhs,
+        friend GSL_CONSTEXPR void _Verify_range(span_iterator lhs,
                                             span_iterator rhs) noexcept
         {   // test that [lhs, rhs) forms a valid range inside an STL algorithm
             Expects(lhs.span_ == rhs.span_ // range spans have to match
                 && lhs.index_ <= rhs.index_); // range must not be transposed
         }
 
-        constexpr void _Verify_offset(const difference_type n) const noexcept
+        GSL_CONSTEXPR void _Verify_offset(const difference_type n) const noexcept
         {   // test that the iterator *this + n is a valid range in an STL
             // algorithm call
             Expects((index_ + n) >= 0 && (index_ + n) <= span_->size());
         }
 
-        constexpr pointer _Unwrapped() const noexcept
+        GSL_CONSTEXPR pointer _Unwrapped() const noexcept
         {   // after seeking *this to a high water mark, or using one of the
             // _Verify_xxx functions above, unwrap this span_iterator to a raw
             // pointer
@@ -283,11 +277,11 @@ namespace details
         // Tell the STL that span_iterator should not be unwrapped if it can't
         // validate in advance, even in release / optimized builds:
 #if defined(GSL_USE_STATIC_CONSTEXPR_WORKAROUND)
-        static constexpr const bool _Unwrap_when_unverified = false;
+        static GSL_CONSTEXPR const bool _Unwrap_when_unverified = false;
 #else
-        static constexpr bool _Unwrap_when_unverified = false;
+        static GSL_CONSTEXPR bool _Unwrap_when_unverified = false;
 #endif
-        constexpr void _Seek_to(const pointer p) noexcept
+        GSL_CONSTEXPR void _Seek_to(const pointer p) noexcept
         {   // adjust the position of *this to previously verified location p
             // after _Unwrapped
             index_ = p - span_->data();
@@ -307,19 +301,19 @@ namespace details
 
         static_assert(Ext >= 0, "A fixed-size span must be >= 0 in size.");
 
-        constexpr extent_type() noexcept {}
+        GSL_CONSTEXPR extent_type() noexcept {}
 
         template <index_type Other>
-        constexpr extent_type(extent_type<Other> ext)
+        GSL_CONSTEXPR extent_type(extent_type<Other> ext)
         {
             static_assert(Other == Ext || Other == dynamic_extent,
                           "Mismatch between fixed-size extent and size of initializing data.");
             Expects(ext.size() == Ext);
         }
 
-        constexpr extent_type(index_type size) { Expects(size == Ext); }
+        GSL_CONSTEXPR extent_type(index_type size) { Expects(size == Ext); }
 
-        constexpr index_type size() const noexcept { return Ext; }
+        GSL_CONSTEXPR index_type size() const noexcept { return Ext; }
     };
 
     template <>
@@ -329,13 +323,13 @@ namespace details
         using index_type = std::ptrdiff_t;
 
         template <index_type Other>
-        explicit constexpr extent_type(extent_type<Other> ext) : size_(ext.size())
+        explicit GSL_CONSTEXPR extent_type(extent_type<Other> ext) : size_(ext.size())
         {
         }
 
-        explicit constexpr extent_type(index_type size) : size_(size) { Expects(size >= 0); }
+        explicit GSL_CONSTEXPR extent_type(index_type size) : size_(size) { Expects(size >= 0); }
 
-        constexpr index_type size() const noexcept { return size_; }
+        GSL_CONSTEXPR index_type size() const noexcept { return size_; }
 
     private:
         index_type size_;
@@ -368,9 +362,9 @@ public:
     using size_type = index_type;
 
 #if defined(GSL_USE_STATIC_CONSTEXPR_WORKAROUND)
-    static constexpr const index_type extent { Extent };
+    static GSL_CONSTEXPR const index_type extent { Extent };
 #else
-    static constexpr index_type extent { Extent };
+    static GSL_CONSTEXPR index_type extent { Extent };
 #endif
 
     // [span.cons], span constructors, copy, assignment, and destructor
@@ -378,31 +372,31 @@ public:
               // "Dependent" is needed to make "std::enable_if_t<Dependent || Extent <= 0>" SFINAE,
               // since "std::enable_if_t<Extent <= 0>" is ill-formed when Extent is greater than 0.
               class = std::enable_if_t<(Dependent || Extent <= 0)>>
-    constexpr span() noexcept : storage_(nullptr, details::extent_type<0>())
+    GSL_CONSTEXPR span() noexcept : storage_(nullptr, details::extent_type<0>())
     {
     }
 
-    constexpr span(pointer ptr, index_type count) : storage_(ptr, count) {}
+    GSL_CONSTEXPR span(pointer ptr, index_type count) : storage_(ptr, count) {}
 
-    constexpr span(pointer firstElem, pointer lastElem)
+    GSL_CONSTEXPR span(pointer firstElem, pointer lastElem)
         : storage_(firstElem, std::distance(firstElem, lastElem))
     {
     }
 
     template <std::size_t N>
-    constexpr span(element_type (&arr)[N]) noexcept
+    GSL_CONSTEXPR span(element_type (&arr)[N]) noexcept
         : storage_(KnownNotNull{&arr[0]}, details::extent_type<N>())
     {
     }
 
     template <std::size_t N, class ArrayElementType = std::remove_const_t<element_type>>
-    constexpr span(std::array<ArrayElementType, N>& arr) noexcept
+    GSL_CONSTEXPR span(std::array<ArrayElementType, N>& arr) noexcept
         : storage_(&arr[0], details::extent_type<N>())
     {
     }
 
     template <std::size_t N>
-    constexpr span(const std::array<std::remove_const_t<element_type>, N>& arr) noexcept
+    GSL_CONSTEXPR span(const std::array<std::remove_const_t<element_type>, N>& arr) noexcept
         : storage_(&arr[0], details::extent_type<N>())
     {
     }
@@ -415,7 +409,7 @@ public:
                   std::is_convertible<typename Container::pointer, pointer>::value &&
                   std::is_convertible<typename Container::pointer,
                                       decltype(std::declval<Container>().data())>::value>>
-    constexpr span(Container& cont) : span(cont.data(), narrow<index_type>(cont.size()))
+    GSL_CONSTEXPR span(Container& cont) : span(cont.data(), narrow<index_type>(cont.size()))
     {
     }
 
@@ -425,42 +419,42 @@ public:
                   std::is_convertible<typename Container::pointer, pointer>::value &&
                   std::is_convertible<typename Container::pointer,
                                       decltype(std::declval<Container>().data())>::value>>
-    constexpr span(const Container& cont) : span(cont.data(), narrow<index_type>(cont.size()))
+    GSL_CONSTEXPR span(const Container& cont) : span(cont.data(), narrow<index_type>(cont.size()))
     {
     }
 
-    constexpr span(const span& other) noexcept = default;
+    GSL_CONSTEXPR span(const span& other) noexcept = default;
 
     template <
         class OtherElementType, std::ptrdiff_t OtherExtent,
         class = std::enable_if_t<
             details::is_allowed_extent_conversion<OtherExtent, Extent>::value &&
             details::is_allowed_element_type_conversion<OtherElementType, element_type>::value>>
-    constexpr span(const span<OtherElementType, OtherExtent>& other)
+    GSL_CONSTEXPR span(const span<OtherElementType, OtherExtent>& other)
         : storage_(other.data(), details::extent_type<OtherExtent>(other.size()))
     {
     }
 
     ~span() noexcept = default;
-    constexpr span& operator=(const span& other) noexcept = default;
+    GSL_CONSTEXPR span& operator=(const span& other) noexcept = default;
 
     // [span.sub], span subviews
     template <std::ptrdiff_t Count>
-    constexpr span<element_type, Count> first() const
+    GSL_CONSTEXPR span<element_type, Count> first() const
     {
         Expects(Count >= 0 && Count <= size());
         return {data(), Count};
     }
 
     template <std::ptrdiff_t Count>
-    constexpr span<element_type, Count> last() const
+    GSL_CONSTEXPR span<element_type, Count> last() const
     {
         Expects(Count >= 0 && size() - Count >= 0);
         return {data() + (size() - Count), Count};
     }
 
     template <std::ptrdiff_t Offset, std::ptrdiff_t Count = dynamic_extent>
-    constexpr auto subspan() const -> typename details::calculate_subspan_type<ElementType, Extent, Offset, Count>::type
+    GSL_CONSTEXPR auto subspan() const -> typename details::calculate_subspan_type<ElementType, Extent, Offset, Count>::type
     {
         Expects((Offset >= 0 && size() - Offset >= 0) &&
                 (Count == dynamic_extent || (Count >= 0 && Offset + Count <= size())));
@@ -468,18 +462,18 @@ public:
         return {data() + Offset, Count == dynamic_extent ? size() - Offset : Count};
     }
 
-    constexpr span<element_type, dynamic_extent> first(index_type count) const
+    GSL_CONSTEXPR span<element_type, dynamic_extent> first(index_type count) const
     {
         Expects(count >= 0 && count <= size());
         return {data(), count};
     }
 
-    constexpr span<element_type, dynamic_extent> last(index_type count) const
+    GSL_CONSTEXPR span<element_type, dynamic_extent> last(index_type count) const
     {
         return make_subspan(size() - count, dynamic_extent, subspan_selector<Extent>{});
     }
 
-    constexpr span<element_type, dynamic_extent> subspan(index_type offset,
+    GSL_CONSTEXPR span<element_type, dynamic_extent> subspan(index_type offset,
                                                          index_type count = dynamic_extent) const
     {
         return make_subspan(offset, count, subspan_selector<Extent>{});
@@ -487,41 +481,41 @@ public:
 
 
     // [span.obs], span observers
-    constexpr index_type size() const noexcept { return storage_.size(); }
-    constexpr index_type size_bytes() const noexcept
+    GSL_CONSTEXPR index_type size() const noexcept { return storage_.size(); }
+    GSL_CONSTEXPR index_type size_bytes() const noexcept
     {
         return size() * narrow_cast<index_type>(sizeof(element_type));
     }
-    constexpr bool empty() const noexcept { return size() == 0; }
+    GSL_CONSTEXPR bool empty() const noexcept { return size() == 0; }
 
     // [span.elem], span element access
-    constexpr reference operator[](index_type idx) const
+    GSL_CONSTEXPR reference operator[](index_type idx) const
     {
         Expects(idx >= 0 && idx < storage_.size());
         return data()[idx];
     }
 
-    constexpr reference at(index_type idx) const { return this->operator[](idx); }
-    constexpr reference operator()(index_type idx) const { return this->operator[](idx); }
-    constexpr pointer data() const noexcept { return storage_.data(); }
+    GSL_CONSTEXPR reference at(index_type idx) const { return this->operator[](idx); }
+    GSL_CONSTEXPR reference operator()(index_type idx) const { return this->operator[](idx); }
+    GSL_CONSTEXPR pointer data() const noexcept { return storage_.data(); }
 
     // [span.iter], span iterator support
-    constexpr iterator begin() const noexcept { return {this, 0}; }
-    constexpr iterator end() const noexcept { return {this, size()}; }
+    GSL_CONSTEXPR iterator begin() const noexcept { return {this, 0}; }
+    GSL_CONSTEXPR iterator end() const noexcept { return {this, size()}; }
 
-    constexpr const_iterator cbegin() const noexcept { return {this, 0}; }
-    constexpr const_iterator cend() const noexcept { return {this, size()}; }
+    GSL_CONSTEXPR const_iterator cbegin() const noexcept { return {this, 0}; }
+    GSL_CONSTEXPR const_iterator cend() const noexcept { return {this, size()}; }
 
-    constexpr reverse_iterator rbegin() const noexcept { return reverse_iterator{end()}; }
-    constexpr reverse_iterator rend() const noexcept { return reverse_iterator{begin()}; }
+    GSL_CONSTEXPR reverse_iterator rbegin() const noexcept { return reverse_iterator{end()}; }
+    GSL_CONSTEXPR reverse_iterator rend() const noexcept { return reverse_iterator{begin()}; }
 
-    constexpr const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator{cend()}; }
-    constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator{cbegin()}; }
+    GSL_CONSTEXPR const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator{cend()}; }
+    GSL_CONSTEXPR const_reverse_iterator crend() const noexcept { return const_reverse_iterator{cbegin()}; }
 
 #ifdef _MSC_VER
     // Tell MSVC how to unwrap spans in range-based-for
-    constexpr pointer _Unchecked_begin() const noexcept { return data(); }
-    constexpr pointer _Unchecked_end() const noexcept { return data() + size(); }
+    GSL_CONSTEXPR pointer _Unchecked_begin() const noexcept { return data(); }
+    GSL_CONSTEXPR pointer _Unchecked_end() const noexcept { return data() + size(); }
 #endif // _MSC_VER
 
 private:
@@ -542,20 +536,20 @@ private:
         // KnownNotNull parameter is needed to remove unnecessary null check
         // in subspans and constructors from arrays
         template <class OtherExtentType>
-        constexpr storage_type(KnownNotNull data, OtherExtentType ext) : ExtentType(ext), data_(data.p)
+        GSL_CONSTEXPR storage_type(KnownNotNull data, OtherExtentType ext) : ExtentType(ext), data_(data.p)
         {
              Expects(ExtentType::size() >= 0);
         }
 
 
         template <class OtherExtentType>
-        constexpr storage_type(pointer data, OtherExtentType ext) : ExtentType(ext), data_(data)
+        GSL_CONSTEXPR storage_type(pointer data, OtherExtentType ext) : ExtentType(ext), data_(data)
         {
              Expects(ExtentType::size() >= 0);
              Expects(data || ExtentType::size() == 0);
         }
 
-        constexpr pointer data() const noexcept { return data_; }
+        GSL_CONSTEXPR pointer data() const noexcept { return data_; }
 
     private:
         pointer data_;
@@ -565,7 +559,7 @@ private:
 
     // The rest is needed to remove unnecessary null check
     // in subspans and constructors from arrays
-    constexpr span(KnownNotNull ptr, index_type count) : storage_(ptr, count) {}
+    GSL_CONSTEXPR span(KnownNotNull ptr, index_type count) : storage_(ptr, count) {}
 
     template <std::ptrdiff_t CallerExtent>
     class subspan_selector {};
@@ -596,48 +590,48 @@ private:
 
 #if defined(GSL_USE_STATIC_CONSTEXPR_WORKAROUND)
 template <class ElementType, std::ptrdiff_t Extent>
-constexpr const typename span<ElementType, Extent>::index_type span<ElementType, Extent>::extent;
+GSL_CONSTEXPR const typename span<ElementType, Extent>::index_type span<ElementType, Extent>::extent;
 #endif
 
 
 // [span.comparison], span comparison operators
 template <class ElementType, std::ptrdiff_t FirstExtent, std::ptrdiff_t SecondExtent>
-constexpr bool operator==(span<ElementType, FirstExtent> l,
+GSL_CONSTEXPR bool operator==(span<ElementType, FirstExtent> l,
                           span<ElementType, SecondExtent> r)
 {
     return std::equal(l.begin(), l.end(), r.begin(), r.end());
 }
 
 template <class ElementType, std::ptrdiff_t Extent>
-constexpr bool operator!=(span<ElementType, Extent> l,
+GSL_CONSTEXPR bool operator!=(span<ElementType, Extent> l,
                           span<ElementType, Extent> r)
 {
     return !(l == r);
 }
 
 template <class ElementType, std::ptrdiff_t Extent>
-constexpr bool operator<(span<ElementType, Extent> l,
+GSL_CONSTEXPR bool operator<(span<ElementType, Extent> l,
                          span<ElementType, Extent> r)
 {
     return std::lexicographical_compare(l.begin(), l.end(), r.begin(), r.end());
 }
 
 template <class ElementType, std::ptrdiff_t Extent>
-constexpr bool operator<=(span<ElementType, Extent> l,
+GSL_CONSTEXPR bool operator<=(span<ElementType, Extent> l,
                           span<ElementType, Extent> r)
 {
     return !(l > r);
 }
 
 template <class ElementType, std::ptrdiff_t Extent>
-constexpr bool operator>(span<ElementType, Extent> l,
+GSL_CONSTEXPR bool operator>(span<ElementType, Extent> l,
                          span<ElementType, Extent> r)
 {
     return r < l;
 }
 
 template <class ElementType, std::ptrdiff_t Extent>
-constexpr bool operator>=(span<ElementType, Extent> l,
+GSL_CONSTEXPR bool operator>=(span<ElementType, Extent> l,
                           span<ElementType, Extent> r)
 {
     return !(l < r);
@@ -686,50 +680,50 @@ as_writeable_bytes(span<ElementType, Extent> s) noexcept
 // make_span() - Utility functions for creating spans
 //
 template <class ElementType>
-constexpr span<ElementType> make_span(ElementType* ptr, typename span<ElementType>::index_type count)
+GSL_CONSTEXPR span<ElementType> make_span(ElementType* ptr, typename span<ElementType>::index_type count)
 {
     return span<ElementType>(ptr, count);
 }
 
 template <class ElementType>
-constexpr span<ElementType> make_span(ElementType* firstElem, ElementType* lastElem)
+GSL_CONSTEXPR span<ElementType> make_span(ElementType* firstElem, ElementType* lastElem)
 {
     return span<ElementType>(firstElem, lastElem);
 }
 
 template <class ElementType, std::size_t N>
-constexpr span<ElementType, N> make_span(ElementType (&arr)[N]) noexcept
+GSL_CONSTEXPR span<ElementType, N> make_span(ElementType (&arr)[N]) noexcept
 {
     return span<ElementType, N>(arr);
 }
 
 template <class Container>
-constexpr span<typename Container::value_type> make_span(Container& cont)
+GSL_CONSTEXPR span<typename Container::value_type> make_span(Container& cont)
 {
     return span<typename Container::value_type>(cont);
 }
 
 template <class Container>
-constexpr span<const typename Container::value_type> make_span(const Container& cont)
+GSL_CONSTEXPR span<const typename Container::value_type> make_span(const Container& cont)
 {
     return span<const typename Container::value_type>(cont);
 }
 
 template <class Ptr>
-constexpr span<typename Ptr::element_type> make_span(Ptr& cont, std::ptrdiff_t count)
+GSL_CONSTEXPR span<typename Ptr::element_type> make_span(Ptr& cont, std::ptrdiff_t count)
 {
     return span<typename Ptr::element_type>(cont, count);
 }
 
 template <class Ptr>
-constexpr span<typename Ptr::element_type> make_span(Ptr& cont)
+GSL_CONSTEXPR span<typename Ptr::element_type> make_span(Ptr& cont)
 {
     return span<typename Ptr::element_type>(cont);
 }
 
 // Specialization of gsl::at for span
 template <class ElementType, std::ptrdiff_t Extent>
-constexpr ElementType& at(span<ElementType, Extent> s, index i)
+GSL_CONSTEXPR ElementType& at(span<ElementType, Extent> s, index i)
 {
     // No bounds checking here because it is done in span::operator[] called below
     return s[i];
@@ -738,12 +732,6 @@ constexpr ElementType& at(span<ElementType, Extent> s, index i)
 } // namespace gsl
 
 #ifdef _MSC_VER
-#if _MSC_VER < 1910
-#undef constexpr
-#pragma pop_macro("constexpr")
-
-#endif // _MSC_VER < 1910
-
 #pragma warning(pop)
 #endif // _MSC_VER
 

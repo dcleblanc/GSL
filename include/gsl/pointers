@@ -20,12 +20,6 @@
 #include <gsl/gsl_common> // Central compiler and external dependencies
 #include <gsl/gsl_assert>  // for Ensures, Expects
 
-#if defined(_MSC_VER) && _MSC_VER < 1910
-#pragma push_macro("constexpr")
-#define constexpr /*constexpr*/
-
-#endif                          // defined(_MSC_VER) && _MSC_VER < 1910
-
 namespace gsl
 {
 
@@ -67,19 +61,19 @@ public:
     static_assert(std::is_assignable<T&, std::nullptr_t>::value, "T cannot be assigned nullptr.");
 
     template <typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
-    constexpr explicit not_null(U&& u) : ptr_(std::forward<U>(u))
+    GSL_CONSTEXPR explicit not_null(U&& u) : ptr_(std::forward<U>(u))
     {
         Expects(ptr_ != nullptr);
     }
 
     template <typename = std::enable_if_t<!std::is_same<std::nullptr_t, T>::value>>
-    constexpr explicit not_null(T u) : ptr_(u)
+    GSL_CONSTEXPR explicit not_null(T u) : ptr_(u)
     {
         Expects(ptr_ != nullptr);
     }
 
     template <typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
-    constexpr not_null(const not_null<U>& other) : not_null(other.get())
+    GSL_CONSTEXPR not_null(const not_null<U>& other) : not_null(other.get())
     {
     }
 
@@ -87,15 +81,15 @@ public:
     not_null(const not_null& other) = default;
     not_null& operator=(const not_null& other) = default;
 
-    constexpr T get() const
+    GSL_CONSTEXPR T get() const
     {
         Ensures(ptr_ != nullptr);
         return ptr_;
     }
 
-    constexpr operator T() const { return get(); }
-    constexpr T operator->() const { return get(); }
-    constexpr decltype(auto) operator*() const { return *get(); } 
+    GSL_CONSTEXPR operator T() const { return get(); }
+    GSL_CONSTEXPR T operator->() const { return get(); }
+    GSL_CONSTEXPR decltype(auto) operator*() const { return *get(); } 
 
     // prevents compilation when someone attempts to assign a null pointer constant
     not_null(std::nullptr_t) = delete;
@@ -178,11 +172,5 @@ struct hash<gsl::not_null<T>>
 };
 
 } // namespace std
-
-#if defined(_MSC_VER) && _MSC_VER < 1910
-#undef constexpr
-#pragma pop_macro("constexpr")
-
-#endif // defined(_MSC_VER) && _MSC_VER < 1910
 
 #endif // GSL_POINTERS_H
